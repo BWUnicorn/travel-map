@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>我的旅行地图</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/map/js/china.js"></script>
+    <style>
+body {
+    margin: 0;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #1e1f2f, #2a2d4a);
+    color: white;
+    overflow: hidden;
+}
+
+/* 地图容器 */
+#main {
+    width: 100%;
+    height: 100vh;
+}
+
+/* 顶部标题 */
+.header {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 2px;
+}
+
+/* 重置按钮 */
+button {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    z-index: 1000;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    background: linear-gradient(45deg, #ff7e5f, #feb47b);
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+</style>
+</head>
+<body>
+
+    <button onclick="resetMap()" style="
+position:absolute;
+top:20px;
+right:20px;
+z-index:1000;
+padding:8px 12px;
+cursor:pointer;
+">
+重置地图
+</button>
+
+<div class="header">
+    🌍 我的 2026 旅行地图
+</div>
+
+<div id="main"></div>
+
+<script>
+// 1️⃣ 获取页面中 id="main" 的 div，用来放地图
+var chart = echarts.init(document.getElementById('main'));
+
+// 2️⃣ 用一个数组来存储“已经去过的省份”
+// 每个元素格式是：{ name: '浙江', value: 1 }
+// 1️⃣ 尝试从浏览器本地读取之前保存的数据
+var savedData = localStorage.getItem("travelData");
+
+// 2️⃣ 如果有数据，就解析成数组
+// 如果没有，就用空数组
+var visited = savedData ? JSON.parse(savedData) : [];
+function renderMap() {
+
+    // 地图的配置项
+    var option = {
+        title: {
+            text: '我的旅行地图',   // 标题文字
+            left: 'center'         // 标题居中
+        },
+
+        tooltip: {},  // 鼠标悬浮提示
+
+        // 颜色控制器（根据 value 值控制颜色）
+        visualMap: {
+            inRange: {
+    color: ['#3a3f7a', '#ffd700']
+},
+            min: 0,
+            max: 1,
+            left: 'left',
+            top: 'bottom',
+            text: ['已去','未去'],   // 左右显示文字
+            calculable: false
+        },
+
+        // 地图主体
+        series: [{
+            name: '中国',
+            type: 'map',          // 类型：地图
+            map: 'china',         // 使用中国地图
+            data: visited         // 用我们存储的数组作为数据
+        }]
+    };
+
+    // 把配置应用到地图上
+    chart.setOption(option);
+}
+
+// 4️⃣ 页面一加载就先画一次地图
+renderMap();
+
+// 重置地图函数
+function resetMap() {
+
+    // 弹出确认提示
+    var confirmReset = confirm("确定要清空所有旅行记录吗？");
+
+    if (confirmReset) {
+
+        // 清空数组
+        visited = [];
+
+        // 清空浏览器存储
+        localStorage.removeItem("travelData");
+
+        // 重新渲染地图
+        renderMap();
+    }
+}
+
+// 5️⃣ 监听“点击地图”的事件
+chart.on('click', function(params) {
+
+    // params.name 就是你点击的省份名字
+    var province = params.name;
+
+    // 检查这个省份是否已经在 visited 里
+    var exists = visited.find(function(item) {
+        return item.name === province;
+    });
+
+    // 如果没有去过，就添加进去
+    if (!exists) {
+        visited.push({
+            name: province,
+            value: 1
+        });
+    }
+
+    // 3️⃣ 每次修改后，把数据存到浏览器本地
+localStorage.setItem("travelData", JSON.stringify(visited));
+
+    // 重新渲染地图（刷新颜色）
+    renderMap();
+});
+</script>
+
+</body>
+</html>
